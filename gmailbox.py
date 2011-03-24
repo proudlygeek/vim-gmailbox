@@ -4,7 +4,7 @@
     Gmailbox
     ~~~~~~~~~~~~~~~~~~
 
-    A Vim plugin for displaying your Gmail inbox 
+    A Vim plugin for displaying your Gmail inbox
     within your favourite text editor ;)
 
     :copyright: (c) 2011 by Gianluca Bargelli.
@@ -14,7 +14,6 @@
 """
 
 
-import os
 import vim
 import base64
 import urllib2
@@ -59,7 +58,7 @@ def python_input(message, secret=False):
 
 def Gmail_auth(username, password):
     """
-    Performs a Basic HTTP Authentication by encoding credentials into an Authentication 
+    Performs a Basic HTTP Authentication by encoding credentials into an Authentication
     header without the need to get a preliminar 401 Unauthorized error
     (see http://stackoverflow.com/questions/2407126/python-urllib2-basic-auth-problem).
     """
@@ -107,22 +106,40 @@ def entry_generator(tree):
 
 def print_mailbox(res):
     """
-    Pretty prints the parsed feed into a nice 
+    Pretty prints the parsed feed into a nice (?)
     format. To complete.
 
-    TODO: don't clear the current buffer, open a new one.
     """
-    del vim.current.buffer[:]
-    #longest_line = max([(key,len(res[key])) for key in res if key != 'entries'])[1]
-    longest_line = vim.current.window.width
+
+    vim.command("vsp new")
+
+    # Some quick lambdas for styling
+    longest_line = vim.current.window.width - 1
+
     margin = lambda x: (longest_line - len(x))/2
-    
-    for key in res:
-        if key != "entries":
-            vim.current.buffer.append( "-" * (longest_line))
-            vim.current.buffer.append( "|"+" " * (margin(res[key])) + "%s"% (res[key]) + " " * (margin(res[key]))+"|")
-            vim.current.buffer.append( "-" * (longest_line))
- 
+
+    print_key = lambda key, add="": \
+            "|" + " " * (margin(res[key]) - (len(add)/2)) \
+            + "%s" % (res[key]) \
+            + add \
+            + " " * (margin(res[key]) - (len(add)/2) - 1) + "|"
+
+    print_text = lambda text: "|" + " " * (margin(text)) + "%s" % text \
+                              + " " * (margin(text)) + "|"
+
+    print_line = lambda symbol: " " + symbol * (longest_line - 1)
+
+    # The printing begins here
+    vim.current.buffer.append(print_line("-"))
+    vim.current.buffer.append(print_key("title"))
+
+    if int(res['fullcount']) > 0:
+        vim.current.buffer.append(print_key("tagline", " (%s)" % res['fullcount']))
+    else:
+        vim.current.buffer.append(print_text("No new messages in your Gmail Inbox"))
+
+    vim.current.buffer.append(print_line("-"))
+
 
 def main():
     # Ask credentials directly from vim's command line
