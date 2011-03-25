@@ -112,19 +112,18 @@ def print_mailbox(res, vertical=False):
     """
     vim.command("vsp gmail-inbox") if vertical else vim.command("sp gmail-inbox")
 
+    # Set the buffer to nofile and hide
+    vim.command("setlocal buftype=nofile")
+    vim.command("setlocal bufhidden=hide")
+
     # Some quick lambdas for styling
     longest_line = vim.current.window.width
 
     margin = lambda x, div=2: (longest_line - len(x))/div
 
-    print_key = lambda key, add="": \
+    print_c = lambda text, add="": \
             "|%s%s%s%s|" % \
-            (" " * (margin(res[key]) - (len(add)/2)), (res[key]), add, " " * (margin(res[key]) - (len(add)/2) - 1))
-
-    print_text = lambda text: "| %s %s %s |"  % \
-                              (" " * margin(text), text, " " * margin(text))
-
-    # print_ltext = lambda text:"| %s %s |" % (text, (" " * margin(text)))
+            (" " * (margin(text) - (len(add)/2)), (text), add, " " * (margin(text) - (len(add)/2) - 1))
 
     print_line = lambda symbol: " " + symbol * (longest_line - 2) + " "
 
@@ -132,13 +131,13 @@ def print_mailbox(res, vertical=False):
     vim.current.buffer[:]
 
     # The printing begins here
-    vim.current.buffer.append(print_line("-"))
-    vim.current.buffer.append(print_key("title"))
+    vim.current.buffer[0] = (print_line("-"))
+    vim.current.buffer.append(print_c(res['title']))
 
     if int(res['fullcount']) > 0:
-        vim.current.buffer.append(print_key("tagline", " (%s)" % res['fullcount']))
+        vim.current.buffer.append(print_c(res['tagline'], " (%s)" % res['fullcount']))
     else:
-        vim.current.buffer.append(print_text("No new messages in your Gmail Inbox"))
+        vim.current.buffer.append(print_c("No new messages in your Gmail Inbox")[:longest_line-1] + "|")
 
     vim.current.buffer.append(print_line("-"))
 
@@ -161,8 +160,6 @@ def print_mailbox(res, vertical=False):
         line = "| %s | %s |" % (_from, title)
         vim.current.buffer.append(line)
         vim.current.buffer.append(print_line("-"))
-    else:
-        pass
 
 
 def main():
