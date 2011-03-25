@@ -104,30 +104,32 @@ def entry_generator(tree):
         yield entry_dict
 
 
-def print_mailbox(res):
+def print_mailbox(res, vertical=False):
     """
     Pretty prints the parsed feed into a nice (?)
     format. To complete.
 
     """
-
-    vim.command("vsp new")
+    vim.command("vsp gmail-inbox") if vertical else vim.command("sp gmail-inbox")
 
     # Some quick lambdas for styling
-    longest_line = vim.current.window.width - 1
+    longest_line = vim.current.window.width
 
-    margin = lambda x: (longest_line - len(x))/2
+    margin = lambda x, div=2: (longest_line - len(x))/div
 
     print_key = lambda key, add="": \
-            "|" + " " * (margin(res[key]) - (len(add)/2)) \
-            + "%s" % (res[key]) \
-            + add \
-            + " " * (margin(res[key]) - (len(add)/2) - 1) + "|"
+            "|%s%s%s%s|" % \
+            (" " * (margin(res[key]) - (len(add)/2)), (res[key]), add, " " * (margin(res[key]) - (len(add)/2) - 1))
 
-    print_text = lambda text: "|" + " " * (margin(text)) + "%s" % text \
-                              + " " * (margin(text)) + "|"
+    print_text = lambda text: "| %s %s %s |"  % \
+                              (" " * margin(text), text, " " * margin(text))
 
-    print_line = lambda symbol: " " + symbol * (longest_line - 1)
+    # print_ltext = lambda text:"| %s %s |" % (text, (" " * margin(text)))
+
+    print_line = lambda symbol: " " + symbol * (longest_line - 2) + " "
+
+    # Clean Buffer
+    vim.current.buffer[:]
 
     # The printing begins here
     vim.current.buffer.append(print_line("-"))
@@ -139,6 +141,28 @@ def print_mailbox(res):
         vim.current.buffer.append(print_text("No new messages in your Gmail Inbox"))
 
     vim.current.buffer.append(print_line("-"))
+
+    # Printing entries
+    for entry in res['entries']:
+        _from = ("%s" % (entry['email']))[:longest_line/3]
+
+        if len(_from) == longest_line/3:
+             _from = _from[:longest_line/3 - 3] + "..."
+        else:
+            _from += " " * ((longest_line/3) - len(_from))
+
+        title = ("%s" % (entry['title']))[:(longest_line/3) * 2]
+
+        if len(title) >= ((longest_line/3) * 2) - 3:
+             title = title[:((longest_line/3) * 2) - 8] + "..."
+        else:
+            title += " " * (((longest_line/3) * 2) - len(title) - 5)
+
+        line = "| %s | %s |" % (_from, title)
+        vim.current.buffer.append(line)
+        vim.current.buffer.append(print_line("-"))
+    else:
+        pass
 
 
 def main():
@@ -161,7 +185,7 @@ def main():
                'entries': [entry for entry in entry_generator(xmltree)]}
 
     # Displays the results in vim
-    print_mailbox(mailbox)
+    print_mailbox(mailbox, vertical=True)
 
 
 if __name__ == '__main__':
