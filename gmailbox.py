@@ -50,7 +50,7 @@ def python_input(message, secret=False):
     # Calls vim's input() or inputsecret() (for passwords)
     input_type = "inputsecret" if secret else "input"
     vim.command('call inputsave()')
-    vim.command("let user_input = %s('%s: ')" %(input_type, message))
+    vim.command("let user_input = %s('%s: ')" % (input_type, message))
     vim.command('call inputrestore()')
     # Returns the value stored in user_input
     return vim.eval('user_input')
@@ -58,12 +58,14 @@ def python_input(message, secret=False):
 
 def Gmail_auth(username, password):
     """
-    Performs a Basic HTTP Authentication by encoding credentials into an Authentication
-    header without the need to get a preliminar 401 Unauthorized error
-    (see http://stackoverflow.com/questions/2407126/python-urllib2-basic-auth-problem).
+    Performs a Basic HTTP Authentication by encoding credentials into
+    an Authentication header without the need to get a preliminar
+    401 Unauthorized error (see http://bit.ly/e1k2fH).
     """
     request = urllib2.Request("https://mail.google.com/mail/feed/atom")
-    base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
+    base64string = base64.encodestring('%s:%s' %
+                   (username, password)).replace('\n', '')
+
     request.add_header("Authorization", "Basic %s" % base64string)
 
     try:
@@ -77,7 +79,7 @@ def Gmail_auth(username, password):
 def relative(tag):
     """
     A shortcut method for accessing the namespace of the
-    XML file; Python 2.7 or later implements 
+    XML file; Python 2.7 or later implements
     xml.etree.ElementTree.register_namespace(prefix, uri)
     for this task.
     """
@@ -88,18 +90,21 @@ def entry_generator(tree):
     """
     Since the RSS Feed has a fixed structure the method
     heavily relies on simply finding the nodes belonging
-    to the same level: shortly, it yields a new dictionary 
-    containing at every <entry> tag it finds; this is 
+    to the same level: shortly, it yields a new dictionary
+    containing at every <entry> tag it finds; this is
     useful for appending them to a list (see how is called
     in a list comprehension in the main() method).
     """
     for entry in tree.findall(relative("entry")):
-        entry_dict = {'title': entry.find(relative("title")).text,
-                      'summary': entry.find(relative("summary")).text,
-                      'issued': entry.find(relative("issued")).text,
-                      'id': entry.find(relative("id")).text,
-                      'name': entry.find(relative("author")).find(relative("name")).text,
-                      'email': entry.find(relative("author")).find(relative("email")).text}
+        entry_dict = {
+                'title': entry.find(relative("title")).text,
+                'summary': entry.find(relative("summary")).text,
+                'issued': entry.find(relative("issued")).text,
+                'id': entry.find(relative("id")).text,
+                'name': entry.find(relative("author"))
+                        .find(relative("name")).text,
+                'email': entry.find(relative("author"))
+                         .find(relative("email")).text}
 
         yield entry_dict
 
@@ -110,7 +115,11 @@ def print_mailbox(res, vertical=False):
     format. To complete.
 
     """
-    vim.command("vsp gmail-inbox") if vertical else vim.command("sp gmail-inbox")
+
+    if vertical:
+        vim.command("vsp gmail-inbox")
+    else:
+        vim.command("sp gmail-inbox")
 
     # Set the buffer to nofile and hide
     vim.command("setlocal buftype=nofile")
@@ -119,11 +128,15 @@ def print_mailbox(res, vertical=False):
     # Some quick lambdas for styling
     longest_line = vim.current.window.width
 
-    margin = lambda x, div=2: (longest_line - len(x))/div
+    margin = lambda x, div=2: (longest_line - len(x)) / div
 
     print_c = lambda text, add="": \
             "|%s%s%s%s|" % \
-            (" " * (margin(text) - (len(add)/2)), (text), add, " " * (margin(text) - (len(add)/2) - 1))
+            (
+                    " " * (margin(text) - (len(add) / 2)),
+                    (text),
+                    add,
+                    " " * (margin(text) - (len(add) / 2) - 1))
 
     print_line = lambda symbol: " " + symbol * (longest_line - 2) + " "
 
@@ -135,27 +148,31 @@ def print_mailbox(res, vertical=False):
     vim.current.buffer.append(print_c(res['title']))
 
     if int(res['fullcount']) > 0:
-        vim.current.buffer.append(print_c(res['tagline'], " (%s)" % res['fullcount']))
+        vim.current.buffer.append(print_c(
+                                  res['tagline'],
+                                  " (%s)" % res['fullcount']))
     else:
-        vim.current.buffer.append(print_c("No new messages in your Gmail Inbox")[:longest_line-1] + "|")
+        vim.current.buffer.append(print_c("""
+        No new messages in your Gmail Inbox
+        """)[:longest_line - 1] + "|")
 
     vim.current.buffer.append(print_line("-"))
 
     # Printing entries
     for entry in res['entries']:
-        _from = ("%s" % (entry['email']))[:longest_line/3]
+        _from = ("%s" % (entry['email']))[:longest_line / 3]
 
-        if len(_from) == longest_line/3:
-             _from = _from[:longest_line/3 - 3] + "..."
+        if len(_from) == longest_line / 3:
+            _from = _from[:longest_line / 3 - 3] + "..."
         else:
-            _from += " " * ((longest_line/3) - len(_from))
+            _from += " " * ((longest_line / 3) - len(_from))
 
-        title = ("%s" % (entry['title']))[:(longest_line/3) * 2]
+        title = ("%s" % (entry['title']))[:(longest_line / 3) * 2]
 
-        if len(title) >= ((longest_line/3) * 2) - 3:
-             title = title[:((longest_line/3) * 2) - 8] + "..."
+        if len(title) >= ((longest_line / 3) * 2) - 3:
+            title = title[:((longest_line / 3) * 2) - 8] + "..."
         else:
-            title += " " * (((longest_line/3) * 2) - len(title) - 5)
+            title += " " * (((longest_line / 3) * 2) - len(title) - 5)
 
         line = "| %s | %s |" % (_from, title)
         vim.current.buffer.append(line)
